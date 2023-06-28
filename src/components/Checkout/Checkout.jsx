@@ -1,51 +1,52 @@
 import { useState, useContext } from "react"
 import { CarritoContext } from "../../Context/CarritoContext";
 import { db } from "../../services/config";
-import { collection, addDoc, docref } from "firebase/firestore";
+import { collection, addDoc, } from "firebase/firestore";
 import "./Checkout.css";
 
 const Checkout = () => {
     const { carrito, vaciarCarrito } = useContext(CarritoContext);
     const [nombre, setNombre] = useState("");
     const [apellido, setApellido] = useState("");
-    const [telefono, setTelefono]= useState("");
+    const [telefono, setTelefono] = useState("");
     const [email, setEmail] = useState("");
     const [emailConfirmacion, setEmailConfirmacion] = useState("");
     const [error, setError] = useState("");
     const [ordenId, setOrdenId] = useState("");
 
-    const manejadorFormulario = () => {
+    const manejadorFormulario = (event) => {
+            event.preventDefault();
         if (!nombre || !apellido || !telefono || !email || !emailConfirmacion) {
             setError("completar el formulario");
         }
 
-        if (!email !== emailConfirmacion){
+        if (!email !== !emailConfirmacion) {
             setError("email distintos verificar");
             return;
         }
 
         const orden = {
-            items: carrito.map(producto =>({
+            items: carrito.map(producto => ({
                 id: producto.item.id,
                 nombre: producto.item.nombre,
                 cantidad: producto.item.cantidad
             })),
-            total: carrito.reduce((total,producto)=>total + producto.item.precio * producto.cantidad, 0),
+            total: carrito.reduce((total, producto) => total + producto.item.precio * producto.cantidad, 0),
             nombre,
             apellido,
             telefono,
             email
-        
+
         };
 
-        addDoc(collection(db,"ordenes"), orden)
-            .then(docref =>{
-                setOrdenId(docref.id);
+        addDoc(collection(db, "ordenes"), orden)
+            .then(docRef => {
+                setOrdenId(docRef.id);
                 vaciarCarrito();
             })
-            .catch(error =>{
-                
-                setError("se produjo un error");
+            .catch(error => {
+
+                setError("se produjo un error al generar la orden");
             })
 
     }
@@ -66,25 +67,24 @@ const Checkout = () => {
                 ))}
                 <hr />
                 <div>
-                    <label htmlFor=""> Nombre</label>
+                    <label htmlFor=""> Nombre:</label>
                     <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} />
                 </div>
 
                 <div>
-                    <label htmlFor="">Apellido</label>
+                    <label htmlFor="">Apellido:</label>
                     <input type="text" value={apellido} onChange={(e) => setApellido(e.target.value)} />
                 </div>
-
                 <div>
-                    <label htmlFor="">Telefono</label>
-                    <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                    <label htmlFor="">Telefono:</label>
+                    <input type="number" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
                 </div>
                 <div>
-                    <label htmlFor="">Email</label>
+                    <label htmlFor="">Email:</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div>
-                    <label htmlFor=""> Email Confirmacion</label>
+                    <label htmlFor=""> Email Confirmacion:</label>
                     <input type="email" value={emailConfirmacion} onChange={(e) => setEmailConfirmacion(e.target.value)} />
                 </div>
 
