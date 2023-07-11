@@ -1,11 +1,12 @@
 import { useState, useContext } from "react"
 import { CarritoContext } from "../../Context/CarritoContext";
 import { db } from "../../services/config";
-import { collection, addDoc, } from "firebase/firestore";
+import { collection, addDoc, getDoc, updateDoc, doc } from "firebase/firestore";
 import "./Checkout.css";
 
+
 const Checkout = () => {
-    const { carrito, vaciarCarrito } = useContext(CarritoContext);
+    const { carrito, vaciarCarrito, total } = useContext(CarritoContext);
     const [nombre, setNombre] = useState("");
     const [apellido, setApellido] = useState("");
     const [telefono, setTelefono] = useState("");
@@ -15,7 +16,7 @@ const Checkout = () => {
     const [ordenId, setOrdenId] = useState("");
 
     const manejadorFormulario = (event) => {
-            event.preventDefault();
+        event.preventDefault();
         if (!nombre || !apellido || !telefono || !email || !emailConfirmacion) {
             setError("completar el formulario");
         }
@@ -39,15 +40,33 @@ const Checkout = () => {
 
         };
 
-        addDoc(collection(db, "ordenes"), orden)
-            .then(docRef => {
-                setOrdenId(docRef.id);
-                vaciarCarrito();
+        Promise.all(
+            orden.items.map(async (productoOrden) => {
+                const productoRef = doc(db, "stockProductos", productoOrden.id);
+                const productoDoc = await getDoc(productoRef);
+                const stockActual = productoDoc.data().stock ;
+                await updateDoc(productoRef, {
+                    stock: stockActual - productoOrden.cantidad,
+                })
             })
-            .catch(error => {
+        )
+            .then(() => {
+                addDoc(collection(db, "ordenes"), orden)
+                    .then((docRef) => {
+                        setOrdenId(docRef.id);
+                        vaciarCarrito();
+                    })
+                    .catch((error) => {
+                        console.error("error en generar orden", error);
+                        setError("error al generar orden");
+                    })
 
-                setError("se produjo un error al generar la orden");
             })
+            /* .catch((error) => {
+                console.error("error al actualizar stock", error);
+                setError("su error en stock de productos");
+            }) */
+
 
     }
 
@@ -60,11 +79,12 @@ const Checkout = () => {
                         <p>
                             {producto.item.nombre} x {producto.cantidad}
                         </p>
-                        <p> Precio $: {producto.item.precio}</p>
+                        <p> Precio: ${producto.item.precio}</p>
                         <hr />
                     </div>
 
                 ))}
+                <p>Precio Final: ${total}</p>
                 <hr />
                 <div>
                     <label htmlFor=""> Nombre:</label>
