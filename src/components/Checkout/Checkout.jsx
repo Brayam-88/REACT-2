@@ -62,10 +62,10 @@ const Checkout = () => {
                     })
 
             })
-            /* .catch((error) => {
+            .catch((error) => {
                 console.error("error al actualizar stock", error);
                 setError("su error en stock de productos");
-            }) */
+            })
 
 
     }
